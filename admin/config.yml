@@ -1,0 +1,217 @@
+# ============================================================
+#  Modular Cryo-ET Electronic Lab Notebook — CMS config
+#
+#  This ONE file defines every template block. To add a field
+#  or a whole new block, you edit this file — nothing else.
+#  Each "type" under "blocks" is one reusable template block.
+# ============================================================
+
+# --- WHERE EXPERIMENTS ARE SAVED --------------------------------------------
+# "github" = COPY MODEL: each lab runs its own copy and commits to its own repo.
+# For ONE shared-team instance instead, replace this backend block with:
+#     backend:
+#       name: git-gateway
+#       branch: main
+# (see README for the trade-offs).
+backend:
+  name: github
+  repo: DMugdha/Lab-notebook        # your GitHub repo
+  branch: main
+
+# Uploaded images (micrographs, lamella shots, tomogram slices) are committed here:
+media_folder: "uploads"
+public_folder: "/uploads"
+
+# Adds a draft -> in review -> ready step using git branches. Remove this line
+# if you want saves to publish immediately.
+publish_mode: editorial_workflow
+
+collections:
+  - name: "cryo_et"
+    label: "Cryo-ET Experiments"
+    label_singular: "Cryo-ET Experiment"
+    folder: "experiments/cryo-et"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{title}}"
+    summary: "{{date}} — {{title}}"
+    description: >
+      One record per tomography experiment. Fill the header, then add only the
+      workflow blocks you actually performed, in the order you did them.
+    fields:
+      # -------------------- HEADER (always present) --------------------
+      - { label: "Experiment title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - { label: "Operator / researcher", name: "operator", widget: "string" }
+      - { label: "Project / grant", name: "project", widget: "string", required: false }
+      - label: "Status"
+        name: "status"
+        widget: "select"
+        options: ["planned", "in progress", "complete", "archived"]
+        default: "in progress"
+      - { label: "Sample ID", name: "sample_id", widget: "string", hint: "Your internal specimen identifier" }
+      - { label: "Summary / aim", name: "aim", widget: "text", required: false }
+
+      # -------------------- THE MODULAR PART --------------------
+      # A reorderable list. "Add" drops in a template block; drag to reorder.
+      - label: "Workflow blocks"
+        name: "blocks"
+        label_singular: "block"
+        widget: "list"
+        hint: "Click 'Add' to insert a template block. Drag the handle to reorder."
+        types:
+
+          - label: "1 · Sample & Vitrification"
+            name: "sample_vitrification"
+            widget: "object"
+            fields:
+              - { label: "Specimen type", name: "specimen_type", widget: "string", hint: "e.g. purified complex, whole cell, tissue" }
+              - { label: "Organism / source", name: "organism", widget: "string", required: false }
+              - { label: "Buffer", name: "buffer", widget: "text", required: false }
+              - { label: "Concentration", name: "concentration", widget: "string", required: false }
+              - { label: "Grid type", name: "grid_type", widget: "string", hint: "e.g. Quantifoil R2/1 Cu 200, lacey carbon" }
+              - { label: "Glow discharge settings", name: "glow_discharge", widget: "string", required: false }
+              - label: "Plunge freezer"
+                name: "plunger"
+                widget: "select"
+                options: ["Vitrobot Mark IV", "Leica EM GP2", "manual", "other"]
+                required: false
+              - { label: "Blot force", name: "blot_force", widget: "number", value_type: "int", required: false }
+              - { label: "Blot time (s)", name: "blot_time", widget: "number", required: false }
+              - { label: "Chamber humidity (%)", name: "humidity", widget: "number", required: false }
+              - { label: "Chamber temp (°C)", name: "chamber_temp", widget: "number", required: false }
+              - label: "Cryogen"
+                name: "cryogen"
+                widget: "select"
+                options: ["ethane", "ethane/propane", "propane"]
+                required: false
+              - { label: "Notes", name: "notes", widget: "text", required: false }
+
+          - label: "2 · Cryo-FIB Milling (lamella)"
+            name: "fib_milling"
+            widget: "object"
+            fields:
+              - { label: "Instrument", name: "instrument", widget: "string", hint: "e.g. Aquilos 2, Arctis" }
+              - { label: "Target lamella thickness (nm)", name: "target_thickness", widget: "number", required: false }
+              - { label: "Milling angle (°)", name: "milling_angle", widget: "number", required: false }
+              - { label: "Rough milling current (nA)", name: "rough_current", widget: "number", required: false }
+              - { label: "Fine / polishing current (pA)", name: "fine_current", widget: "number", required: false }
+              - { label: "Number of lamellae", name: "n_lamellae", widget: "number", value_type: "int", required: false }
+              - { label: "Platinum coating", name: "pt_coat", widget: "boolean", default: true, required: false }
+              - { label: "Milling software", name: "milling_software", widget: "string", required: false, hint: "e.g. AutoTEM, SerialFIB" }
+              - { label: "Lamella image", name: "lamella_image", widget: "image", required: false }
+              - { label: "Notes", name: "notes", widget: "text", required: false }
+
+          - label: "3 · Tilt-Series Acquisition"
+            name: "acquisition"
+            widget: "object"
+            fields:
+              - { label: "Microscope", name: "microscope", widget: "string", hint: "e.g. Titan Krios G4" }
+              - label: "Accelerating voltage (kV)"
+                name: "voltage"
+                widget: "select"
+                options: [300, 200, 100]
+                default: 300
+              - { label: "Detector", name: "detector", widget: "string", hint: "e.g. K3, Falcon 4i" }
+              - { label: "Energy filter slit (eV)", name: "slit", widget: "number", required: false }
+              - { label: "Magnification", name: "magnification", widget: "string", required: false }
+              - { label: "Pixel size (Å/px)", name: "pixel_size", widget: "number", required: false }
+              - label: "Tilt scheme"
+                name: "tilt_scheme"
+                widget: "select"
+                options: ["dose-symmetric (Hagen)", "bidirectional", "unidirectional", "continuous"]
+                default: "dose-symmetric (Hagen)"
+              - { label: "Tilt range (°)", name: "tilt_range", widget: "string", hint: "e.g. -60 to +60" }
+              - { label: "Tilt increment (°)", name: "tilt_increment", widget: "number", default: 3 }
+              - { label: "Dose per tilt (e-/Å²)", name: "dose_per_tilt", widget: "number", required: false }
+              - { label: "Total dose (e-/Å²)", name: "total_dose", widget: "number", required: false }
+              - { label: "Defocus range (µm)", name: "defocus", widget: "string", required: false, hint: "e.g. -2 to -5" }
+              - label: "Acquisition software"
+                name: "acq_software"
+                widget: "select"
+                options: ["SerialEM", "Tomo5", "PACEtomo", "TOMO4", "other"]
+                required: false
+              - { label: "Number of tilt series collected", name: "n_tilt_series", widget: "number", value_type: "int", required: false }
+              - { label: "Notes", name: "notes", widget: "text", required: false }
+
+          - label: "4 · Pre-processing"
+            name: "preprocessing"
+            widget: "object"
+            fields:
+              - { label: "Motion correction software", name: "motioncor", widget: "string", required: false, hint: "e.g. MotionCor2, Warp" }
+              - { label: "CTF estimation software", name: "ctf_software", widget: "string", required: false, hint: "e.g. CTFFIND4, ctfplotter, Warp" }
+              - { label: "Dose weighting applied", name: "dose_weighting", widget: "boolean", default: true, required: false }
+              - { label: "Frames per tilt", name: "frames_per_tilt", widget: "number", value_type: "int", required: false }
+              - { label: "Notes", name: "notes", widget: "text", required: false }
+
+          - label: "5 · Tilt-Series Alignment"
+            name: "alignment"
+            widget: "object"
+            fields:
+              - label: "Alignment method"
+                name: "method"
+                widget: "select"
+                options: ["fiducial (gold beads)", "patch tracking (fiducial-less)", "AreTomo (fiducial-less)"]
+              - { label: "Fiducial size (nm)", name: "fiducial_size", widget: "number", required: false, hint: "e.g. 10 nm gold" }
+              - label: "Software"
+                name: "software"
+                widget: "select"
+                options: ["IMOD / etomo", "AreTomo", "Dynamo", "other"]
+                required: false
+              - { label: "Mean residual error (px)", name: "residual", widget: "number", required: false }
+              - { label: "Notes", name: "notes", widget: "text", required: false }
+
+          - label: "6 · Tomogram Reconstruction"
+            name: "reconstruction"
+            widget: "object"
+            fields:
+              - label: "Reconstruction method"
+                name: "method"
+                widget: "select"
+                options: ["weighted back projection (WBP)", "SIRT", "SART"]
+                default: "weighted back projection (WBP)"
+              - label: "Software"
+                name: "software"
+                widget: "select"
+                options: ["IMOD", "AreTomo", "novaCTF", "other"]
+                required: false
+              - { label: "3D CTF correction", name: "ctf_3d", widget: "boolean", default: false, required: false }
+              - { label: "Binning", name: "binning", widget: "string", required: false, hint: "e.g. bin4" }
+              - { label: "Tomogram dimensions (px)", name: "dimensions", widget: "string", required: false }
+              - { label: "Representative tomogram slice", name: "tomo_image", widget: "image", required: false }
+              - { label: "Notes", name: "notes", widget: "text", required: false }
+
+          - label: "7 · Subtomogram Averaging"
+            name: "subtomogram_averaging"
+            widget: "object"
+            fields:
+              - { label: "Particle of interest", name: "particle", widget: "string", required: false }
+              - { label: "Picking method", name: "picking", widget: "string", required: false, hint: "e.g. template matching, manual, geometric" }
+              - { label: "Number of subtomograms", name: "n_subtomos", widget: "number", value_type: "int", required: false }
+              - { label: "Box size (px)", name: "box_size", widget: "number", value_type: "int", required: false }
+              - label: "STA software"
+                name: "sta_software"
+                widget: "select"
+                options: ["RELION", "Dynamo", "STOPGAP", "M / Warp", "emClarity", "other"]
+                required: false
+              - { label: "Symmetry", name: "symmetry", widget: "string", required: false, hint: "e.g. C1, C6, D2" }
+              - { label: "Final resolution (Å, FSC 0.143)", name: "resolution", widget: "number", required: false }
+              - { label: "Final map image", name: "map_image", widget: "image", required: false }
+              - { label: "Notes", name: "notes", widget: "text", required: false }
+
+          - label: "8 · Deposition & Data"
+            name: "deposition"
+            widget: "object"
+            fields:
+              - { label: "EMDB accession", name: "emdb", widget: "string", required: false }
+              - { label: "EMPIAR accession (raw data)", name: "empiar", widget: "string", required: false }
+              - { label: "PDB accession", name: "pdb", widget: "string", required: false }
+              - { label: "Data storage location", name: "storage", widget: "string", required: false }
+              - { label: "Notes", name: "notes", widget: "text", required: false }
+
+          - label: "+ Free-text / Observation"
+            name: "note_block"
+            widget: "object"
+            fields:
+              - { label: "Heading", name: "heading", widget: "string", required: false }
+              - { label: "Content", name: "content", widget: "markdown" }
+              - { label: "Attachment", name: "attachment", widget: "image", required: false }
